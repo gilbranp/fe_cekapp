@@ -2,6 +2,8 @@
 import { element } from 'prop-types'
 import React from 'react'
 
+
+const Register = React.lazy(() => import('./views/pages/register/Register'))
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
 const Barang = React.lazy(() => import('./views/barang/Barang'))
 const Kategori = React.lazy(() => import('./views/barang/Kategori'))
@@ -75,6 +77,7 @@ const routes = [
   { path: '/keuangan', name: 'keuangan', element: Keuangan },
   { path: '/jadwal', name: 'jadwal', element: Jadwal },
   { path: '/anggota', name: 'anggota', element: Anggota},
+  { path:'/register', name: 'register', element: Register },
 
   // Batas template
   { path: '/theme', name: 'Theme', element: Colors, exact: true },

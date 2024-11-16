@@ -11,6 +11,7 @@ const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))
 // Pages
 const Login = React.lazy(() => import('./views/pages/login/Login'))
 const Register = React.lazy(() => import('./views/pages/register/Register'))
+const LandingPage = React.lazy(() => import('./views/pages/LandingPage'))
 
 // PrivateRoute
 import PrivateRoute from './components/PrivateRoute'
@@ -50,6 +51,7 @@ const App = () => {
           {/* <Route exact path="/dashboard" name="Register Page" element={<Dashboard />} /> */}
           <Route exact path="/register" name="Register Page" element={<Register />} />
           <Route path="*" name="Home" element={<DefaultLayout />} />
+          <Route path="/" name="LandingPage" element={<LandingPage/>}/>
         </Routes>
       </Suspense>
     </HashRouter>
