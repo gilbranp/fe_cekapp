@@ -84,7 +84,7 @@ const LandingPage = () => {
             Dapatkan kemudahan dalam mengelola aktivitas keluarga Anda dengan solusi cerdas kami.
           </p>
           <a
-            href="/register"
+            href="#/register"
             className="btn btn-primary btn-lg rounded-pill px-5 py-3 shadow-lg animate__animated animate__pulse animate__infinite"
           >
             Daftar Sekarang

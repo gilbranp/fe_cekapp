@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,38 +8,51 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const navigate = useNavigate(); // Hook untuk navigasi
+  const navigate = useNavigate(); // Gunakan navigate di dalam komponen
+
+  // Redirect jika sudah login (token ada)
+  useEffect(() => {
+    if (localStorage.getItem('token')) {
+      navigate('/dashboard'); // Redirect ke dashboard
+    }
+  }, [navigate]); // Tambahkan dependensi navigate
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
+    if (!username || !password) {
+      setError('Username dan password harus diisi.');
+      return;
+    }
+
     try {
       const response = await axios.post('http://localhost:8000/api/login', {
         username,
-        password
+        password,
       });
 
-      if (response.data.status) {
+      if (response.data.success) {
         setSuccess(response.data.message);
-        localStorage.setItem('token', response.data.token); // Konsisten menggunakan 'token'
-      
-        // Mengarahkan ke halaman dashboard
-        navigate('/dashboard');
-      }
-       else {
+        localStorage.setItem('token', response.data.token);
+        navigate('/dashboard'); // Redirect ke dashboard setelah login berhasil
+      } else {
         setError(response.data.message);
       }
     } catch (err) {
-      setError('Login failed. Please check your credentials.');
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Terjadi kesalahan. Coba lagi nanti.');
+      }
     }
   };
 
   return (
     <div className="d-flex align-items-center justify-content-center min-vh-100 bg-body-tertiary">
       <div className="card shadow-lg p-4" style={{ maxWidth: '400px', width: '100%' }}>
-        <h2 className="text-center mb-4">Login</h2>
+        <h2 className="text-center mb-4">Masuk</h2>
         {error && (
           <div className="alert alert-danger text-center" role="alert">
             {error}
@@ -63,7 +76,7 @@ const Login = () => {
             />
           </div>
           <div className="mb-3">
-            <label htmlFor="password" className="form-label">Password</label>
+            <label htmlFor="password" className="form-label">Kata Sandi</label>
             <input
               type="password"
               className="form-control"
@@ -76,9 +89,9 @@ const Login = () => {
           <button type="submit" className="btn btn-primary w-100">Login</button>
         </form>
 
-        <div className="text-center mt-3">
-          <p>Belum punya akun?</p>
-          <a href="/register" className="btn btn-secondary w-100">Register</a>
+        <hr />
+        <div className="text-center">
+          <p>Belum punya akun? <a href="#/register" onClick={() => navigate('/register')} style={{ color: '#0d6efd', textDecoration: 'none' }}>Register</a></p>
         </div>
       </div>
     </div>
