@@ -21,8 +21,8 @@ import { useNavigate } from 'react-router-dom';
 const Tugas = () => {
   const [tugas, setTugas] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [detailModalVisible, setDetailModalVisible] = useState(false); // Modal untuk detail tugas
-  const [selectedTugas, setSelectedTugas] = useState(null); // Untuk menyimpan tugas yang dipilih
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedTugas, setSelectedTugas] = useState(null);
   const [newTugas, setNewTugas] = useState({
     judul: '',
     deskripsi: '',
@@ -31,85 +31,111 @@ const Tugas = () => {
     prioritas: 'Sedang',
     diberikan_kepada: '',
   });
-  const [users, setUsers] = useState([]); // State untuk menyimpan daftar user
+  const [users, setUsers] = useState([]);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
 
-  // Ambil data tugas dari API
-  const fetchData = () => {
-    fetch('http://localhost:8000/api/tugas')
-      .then((response) => response.json())
-      .then((data) => setTugas(data))
-      .catch((error) => console.error('Error:', error));
-  };
+// Ambil data tugas
+const fetchData = () => {
+  const token = localStorage.getItem('token'); // Ambil token dari localStorage (atau sumber lain)
+  
+  if (!token) {
+    console.error('Token tidak ditemukan. Pastikan pengguna sudah login.');
+    return;
+  }
 
-  // Ambil daftar user dari API
+  fetch('http://localhost:8000/api/tugas', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`, // Tambahkan token autentikasi
+    },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      console.log('Data dari API:', data);
+      setTugas(data); // Update state dengan data dari API
+    })
+    .catch((error) => console.error('Error:', error));
+};
+
+
+  // Ambil daftar pengguna
   const fetchUsers = () => {
-    fetch('http://localhost:8000/api/users') // API untuk daftar user
+    fetch('http://localhost:8000/api/users')
       .then((response) => response.json())
-      .then((data) => {
-        setUsers(data); // Simpan data user ke state
-        console.log(data); // Debugging: pastikan data user benar
-      })
+      .then((data) => setUsers(data))
       .catch((error) => console.error('Error:', error));
   };
 
   useEffect(() => {
     fetchData();
-    fetchUsers(); // Panggil fetchUsers untuk mendapatkan daftar user
+    fetchUsers();
   }, []);
 
-  // Fungsi untuk menambahkan tugas baru
-  const handleSaveTugas = () => {
-    if (!newTugas.judul || !newTugas.diberikan_kepada) {
-      setError('Judul dan Diberikan Kepada harus diisi!');
-      return;
-    }
+ // Tambah tugas baru
+const handleSaveTugas = () => {
+  if (!newTugas.judul || !newTugas.diberikan_kepada) {
+    setError('Judul dan Diberikan Kepada harus diisi!');
+    return;
+  }
 
-    setError('');
-    fetch('http://localhost:8000/api/tugas', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(newTugas),
+  setError('');
+  
+  const token = localStorage.getItem('token'); // Ambil token dari localStorage
+  
+  if (!token) {
+    setError('Token tidak ditemukan. Pastikan pengguna sudah login.');
+    return;
+  }
+
+  fetch('http://localhost:8000/api/tugas', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`, // Tambahkan token autentikasi
+    },
+    body: JSON.stringify(newTugas),
+  })
+    .then((response) => {
+      if (!response.ok) throw new Error('Gagal menambahkan tugas');
+      return response.json();
     })
-      .then((response) => {
-        if (!response.ok) throw new Error('Gagal menambahkan tugas');
-        return response.json();
-      })
-      .then((data) => {
-        setTugas((prev) => [...prev, data.tugas]);
-        setModalVisible(false);
-        setNewTugas({
-          judul: '',
-          deskripsi: '',
-          batas_waktu: '',
-          status: 'Belum Mulai',
-          prioritas: 'Sedang',
-          diberikan_kepada: '',
-        });
-        setSuccessMessage('Tugas berhasil ditambahkan!');
-      })
-      .catch((error) => {
-        setError('Terjadi kesalahan saat menambahkan tugas.');
-        console.error('Error:', error);
+    .then((data) => {
+      setTugas((prev) => [...prev, data.tugas]);
+      setModalVisible(false);
+      setNewTugas({
+        judul: '',
+        deskripsi: '',
+        batas_waktu: '',
+        status: 'Belum Mulai',
+        prioritas: 'Sedang',
+        diberikan_kepada: '',
       });
-  };
+      setSuccessMessage('Tugas berhasil ditambahkan!');
+    })
+    .catch((error) => {
+      setError('Terjadi kesalahan saat menambahkan tugas.');
+      console.error('Error:', error);
+    });
+};
 
-  // Fungsi untuk menampilkan detail tugas
+  // Tampilkan detail tugas
   const handleShowDetail = (tugas) => {
     setSelectedTugas(tugas);
     setDetailModalVisible(true);
   };
 
-  // Fungsi untuk menghapus tugas
+  // Hapus tugas
   const handleDeleteTugas = (id) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus tugas ini?')) {
-      fetch(`http://localhost:8000/api/tugas/${id}`, {
-        method: 'DELETE',
-      })
+      fetch(`http://localhost:8000/api/tugas/${id}`, { method: 'DELETE' })
         .then((response) => {
           if (!response.ok) throw new Error('Gagal menghapus tugas');
           setTugas((prev) => prev.filter((item) => item.id !== id));
@@ -123,21 +149,16 @@ const Tugas = () => {
   };
 
   const goToDetailTugas = (id) => {
-    navigate(`/detailtugas/${id}`); // Menyertakan id dalam URL
+    navigate(`/detailtugas/${id}`);
   };
-  
 
   return (
-    <div className="container mt-4">
-      <header className="row align-items-center pb-4 mb-4">
-        <div className="col-12 col-md-6">
-          <h2 className="text-primary mb-3 mb-md-0">Pengelolaan Tugas</h2>
-        </div>
-        <div className="col-12 col-md-6 d-flex justify-content-md-end gap-2">
-          <CButton color="primary" onClick={() => setModalVisible(true)}>
-            Tambah Tugas
-          </CButton>
-        </div>
+    <div className="container mx-auto mt-4 px-4">
+      <header className="flex justify-between items-center pb-4 mb-4 border-b">
+        <h2 className="text-primary">Pengelolaan Tugas</h2>
+        <CButton color="primary" onClick={() => setModalVisible(true)}>
+          Tambah Tugas
+        </CButton>
       </header>
 
       {successMessage && (
@@ -148,10 +169,9 @@ const Tugas = () => {
 
       {error && <p className="text-danger">{error}</p>}
 
-      <div className="table-responsive">
-        <CTable hover striped responsive>
+      <CTable hover striped responsive>
         <CTableHead color="light">
-        <CTableRow>
+          <CTableRow>
             <CTableHeaderCell>ID</CTableHeaderCell>
             <CTableHeaderCell>Judul</CTableHeaderCell>
             <CTableHeaderCell>Deskripsi</CTableHeaderCell>
@@ -159,56 +179,43 @@ const Tugas = () => {
             <CTableHeaderCell>Status</CTableHeaderCell>
             <CTableHeaderCell>Prioritas</CTableHeaderCell>
             <CTableHeaderCell>Diberikan Kepada</CTableHeaderCell>
-            <CTableHeaderCell>Dibuat Oleh</CTableHeaderCell> {/* Kolom baru */}
             <CTableHeaderCell>Aksi</CTableHeaderCell>
-        </CTableRow>
+          </CTableRow>
         </CTableHead>
-
         <CTableBody>
-  {tugas.length === 0 ? (
-    <CTableRow>
-      <CTableDataCell colSpan="9" className="text-center"> {/* Ubah 8 menjadi 9 */}
-        Data tugas belum ada, silahkan tambahkan tugas baru.
-      </CTableDataCell>
-    </CTableRow>
-  ) : (
-    tugas.map((item) => (
-      <CTableRow key={item.id}>
-        <CTableDataCell>{item.id}</CTableDataCell>
-        <CTableDataCell>{item.judul}</CTableDataCell>
-        <CTableDataCell>{item.deskripsi || '-'}</CTableDataCell>
-        <CTableDataCell>{item.batas_waktu || '-'}</CTableDataCell>
-        <CTableDataCell>{item.status}</CTableDataCell>
-        <CTableDataCell>{item.prioritas}</CTableDataCell>
-        <CTableDataCell>
-          {users.find((user) => user.id === item.diberikan_kepada)?.nama || '-'}
-        </CTableDataCell>
-        <CTableDataCell>
-          {/* Mencari nama pengguna berdasarkan ID yang terdapat di `created_by` */}
-          {users.find((user) => user.id === item.dibuat_oleh)?.nama || '-'}
-        </CTableDataCell>
-        <CTableDataCell>
-        <CButton color="info" size="sm" onClick={() => goToDetailTugas(item.id)}>
-          Lihat Detail
-        </CButton>
-        {' '}
-          <CButton color="warning" size="sm">
-            Pengajuan
-          </CButton>{' '}
-          <CButton color="danger" size="sm" onClick={() => handleDeleteTugas(item.id)}>
-            Hapus
-          </CButton>
-        </CTableDataCell>
-      </CTableRow>
-    ))
-  )}
-</CTableBody>
+          {tugas.length === 0 ? (
+            <CTableRow>
+              <CTableDataCell colSpan="8" className="text-center">
+                Data tugas belum ada.
+              </CTableDataCell>
+            </CTableRow>
+          ) : (
+            tugas.map((item) => (
+              <CTableRow key={item.id}>
+                <CTableDataCell>{item.id}</CTableDataCell>
+                <CTableDataCell>{item.judul}</CTableDataCell>
+                <CTableDataCell>{item.deskripsi || '-'}</CTableDataCell>
+                <CTableDataCell>{item.batas_waktu || '-'}</CTableDataCell>
+                <CTableDataCell>{item.status}</CTableDataCell>
+                <CTableDataCell>{item.prioritas}</CTableDataCell>
+                <CTableDataCell>
+                  {users.find((user) => user.id === item.diberikan_kepada)?.nama || '-'}
+                </CTableDataCell>
+                <CTableDataCell>
+                  <CButton color="info" size="sm" onClick={() => handleShowDetail(item)}>
+                    Detail
+                  </CButton>{' '}
+                  <CButton color="danger" size="sm" onClick={() => handleDeleteTugas(item.id)}>
+                    Hapus
+                  </CButton>
+                </CTableDataCell>
+              </CTableRow>
+            ))
+          )}
+        </CTableBody>
+      </CTable>
 
-
-        </CTable>
-      </div>
-
-      {/* Modal untuk tambah tugas */}
+      {/* Modal Tambah Tugas */}
       <CModal visible={modalVisible} onClose={() => setModalVisible(false)}>
         <CModalHeader closeButton>
           <h5 className="modal-title">Tambah Tugas</h5>
@@ -260,7 +267,7 @@ const Tugas = () => {
           >
             <option value="">Pilih Pengguna</option>
             {users.map((user) => (
-              <option key={user.id} value={user.nama}>
+              <option key={user.id} value={user.id}>
                 {user.nama}
               </option>
             ))}
@@ -268,10 +275,49 @@ const Tugas = () => {
         </CModalBody>
         <CModalFooter>
           <CButton color="secondary" onClick={() => setModalVisible(false)}>
-            Batal
+            Tutup
           </CButton>
           <CButton color="primary" onClick={handleSaveTugas}>
             Simpan
+          </CButton>
+        </CModalFooter>
+      </CModal>
+
+      {/* Modal Detail Tugas */}
+      <CModal visible={detailModalVisible} onClose={() => setDetailModalVisible(false)}>
+        <CModalHeader closeButton>
+          <h5 className="modal-title">Detail Tugas</h5>
+        </CModalHeader>
+        <CModalBody>
+          {selectedTugas ? (
+            <>
+              <p>
+                <strong>Judul:</strong> {selectedTugas.judul}
+              </p>
+              <p>
+                <strong>Deskripsi:</strong> {selectedTugas.deskripsi}
+              </p>
+              <p>
+                <strong>Batas Waktu:</strong> {selectedTugas.batas_waktu}
+              </p>
+              <p>
+                <strong>Status:</strong> {selectedTugas.status}
+              </p>
+              <p>
+                <strong>Prioritas:</strong> {selectedTugas.prioritas}
+              </p>
+              <p>
+                <strong>Diberikan Kepada:</strong>{' '}
+                {users.find((user) => user.id === selectedTugas.diberikan_kepada)?.nama || '-'}
+              </p>
+            </>
+          ) : (
+            <p>Loading...</p>
+          )}
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={() => setDetailModalVisible(false)}>
+            Tutup
           </CButton>
         </CModalFooter>
       </CModal>
